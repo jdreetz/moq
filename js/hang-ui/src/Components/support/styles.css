@@ -1,0 +1,22 @@
+.supportContainer {
+    margin: 0 auto;
+    max-width: 28rem;
+    padding: 1rem;
+}
+
+.supportHeaderContainer {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.supportHeaderStatus {
+    font-weight: bold;
+}
+
+.supportHeaderButton {
+    font-size: 14px;
+}

@@ -8,12 +8,14 @@
 	"exports": {
 		"./publish/element": "./src/Components/publish/element.tsx",
 		"./watch/element": "./src/Components/watch/element.tsx",
-		"./stats": "./src/Components/stats/index.ts"
+		"./stats": "./src/Components/stats/index.ts",
+		"./support/element": "./src/Components/support/element.tsx"
 	},
 	"sideEffects": [
 		"./src/Components/publish/element.tsx",
 		"./src/Components/watch/element.tsx",
-		"./src/Components/stats/element.ts"
+		"./src/Components/stats/element.ts",
+		"./src/Components/support/element.tsx"
 	],
 	"scripts": {
 		"build": "bun run clean && rollup -c && bun ../scripts/package.ts",
