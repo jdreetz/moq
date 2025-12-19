@@ -1,22 +1,60 @@
 .supportContainer {
-    margin: 0 auto;
-    max-width: 28rem;
-    padding: 1rem;
+	margin: 0 auto;
+	max-width: 28rem;
+	padding: 1rem;
 }
 
 .supportHeaderContainer {
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
+	display: flex;
+	flex-direction: row;
+	gap: 1rem;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
 }
 
 .supportHeaderStatus {
-    font-weight: bold;
+	font-weight: bold;
 }
 
 .supportHeaderButton {
-    font-size: 14px;
+	font-size: 14px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: white;
+}
+
+.supportDetailsContainer {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	column-gap: 0.5rem;
+	row-gap: 0.2rem;
+	background-color: rgba(0, 0, 0, 0.6);
+	border-radius: 0.5rem;
+	padding: 1rem;
+	font-size: 0.875rem;
+}
+
+.supportDetailsRowLabel {
+	grid-column-start: 1;
+	font-weight: bold;
+	text-align: right;
+}
+
+.supportDetailsRowValue {
+	grid-column-start: 2;
+	text-align: center;
+}
+
+.supportDetailsRowDetails {
+	grid-column-start: 3;
+}
+
+.supportDetailsFirefoxNote {
+	grid-column-start: 1;
+	grid-column-end: 4;
+	text-align: center;
+	font-size: 0.875rem;
+	font-style: italic;
 }
