@@ -1,4 +1,5 @@
 import type * as Moq from "@moq/lite";
+import type { TimeRange } from "../../frame";
 import { Effect, type Getter, Signal } from "@moq/signals";
 import type * as Catalog from "../../catalog";
 import * as Frame from "../../frame";
@@ -96,6 +97,10 @@ export class Source {
 	readonly stats: Getter<VideoStats | undefined> = this.#stats;
 
 	#signals = new Effect();
+
+	bufferDepth = new Signal(0 as Time.Milli);
+
+	bufferedRanges = new Signal<TimeRange[]>([]);
 
 	constructor(
 		broadcast: Signal<Moq.Broadcast | undefined>,
@@ -202,6 +207,12 @@ export class Source {
 			latency: this.latency,
 			container: config.container,
 		});
+
+		effect.effect((inner) => {
+			const depth = inner.get(consumer.bufferDepth);
+			this.bufferDepth.set(depth);
+		});
+
 		effect.cleanup(() => consumer.close());
 
 		// We need a queue because VideoDecoder doesn't block on a Promise returned by output.
@@ -273,6 +284,8 @@ export class Source {
 					// NOTE: WebCodecs doesn't block on output promises (I think?), so these sleeps will occur concurrently.
 					// TODO: This cause the `syncStatus` to be racey especially
 					await new Promise((resolve) => setTimeout(resolve, sleep));
+					console.log("Slept for", sleep);
+					consumer.updateBufferDepth();
 				}
 
 				if (sleep > MIN_SYNC_WAIT_MS) {
@@ -307,6 +320,18 @@ export class Source {
 
 		effect.spawn(async () => {
 			for (;;) {
+				// Wait for backpressure from the renderer (efficient).
+				// We need this so that frames pile up in the Consumer (which has the buffer depth signal)
+				// instead of draining instantly into the TransformStream/VideoDecoder where we can't measure them.
+				await writer.ready;
+
+				// Wait for backpressure from the decoder (polling).
+				// NOTE: There's no event for this, so we have to poll.
+				if (decoder.decodeQueueSize >= MAX_BFRAMES) {
+					await new Promise((resolve) => setTimeout(resolve, 10));
+					continue;
+				}
+
 				const next = await Promise.race([consumer.decode(), effect.cancel]);
 				if (!next) break;
 

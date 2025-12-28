@@ -2,9 +2,9 @@ import useWatchUIContext from "./useWatchUIContext";
 
 const MIN_RANGE = 0;
 const MAX_RANGE = 200_000;
-const RANGE_STEP = 100;
+const RANGE_STEP = 250;
 
-export default function LatencySlider() {
+export default function LatencyAmount() {
 	const context = useWatchUIContext();
 	const onInputChange = (event: Event) => {
 		const target = event.currentTarget as HTMLInputElement;
@@ -14,20 +14,19 @@ export default function LatencySlider() {
 
 	return (
 		<div class="latencySliderContainer">
-			<label for="latency-slider" class="latencyLabel">
-				Latency:{" "}
+			<label for="latency-input" class="latencyLabel">
+				Latency (ms)
 			</label>
 			<input
-				id="latency-slider"
+				id="latency-input"
 				onChange={onInputChange}
-				class="latencySlider"
-				type="range"
+				class="latencyInput"
+				type="number"
 				min={MIN_RANGE}
 				max={MAX_RANGE}
 				step={RANGE_STEP}
 				value={context.latency()}
 			/>
-			<span>{typeof context.latency() !== "undefined" ? `${Math.round(context.latency())}ms` : ""}</span>
 		</div>
 	);
 }

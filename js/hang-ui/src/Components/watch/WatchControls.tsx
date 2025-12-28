@@ -1,5 +1,5 @@
 import FullscreenButton from "./FullscreenButton";
-import LatencySlider from "./LatencySlider";
+import LatencyButton from "./LatencyButton";
 import PlayPauseButton from "./PlayPauseButton";
 import QualitySelector from "./QualitySelector";
 import StatsButton from "./StatsButton";
@@ -15,9 +15,9 @@ export default function WatchControls() {
 				<WatchStatusIndicator />
 				<FullscreenButton />
 				<StatsButton />
+				<LatencyButton />
 			</div>
 			<div class="latencyControlsRow">
-				<LatencySlider />
 				<QualitySelector />
 			</div>
 		</div>

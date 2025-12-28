@@ -5,6 +5,7 @@ import { Show } from "solid-js/web";
 import { Stats } from "../stats/Stats";
 import type { ProviderProps } from "../stats/types";
 import BufferingIndicator from "./BufferingIndicator";
+import LatencyControls from "./LatencyControls";
 import styles from "./styles.css?inline";
 import WatchControls from "./WatchControls";
 import WatchUIContextProvider, { WatchUIContext } from "./WatchUIContextProvider";
@@ -44,6 +45,7 @@ customElement("hang-watch-ui", {}, function WatchUIWebComponent(_, { element }) 
 							);
 						})()}
 						<BufferingIndicator />
+						<LatencyControls />
 					</div>
 					<WatchControls />
 				</WatchUIContextProvider>

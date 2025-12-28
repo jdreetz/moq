@@ -83,6 +83,11 @@ interface Group {
 	latest?: Time.Micro; // The timestamp of the latest known frame
 }
 
+export interface TimeRange {
+	start: Time.Milli;
+	end: Time.Milli;
+}
+
 export class Consumer {
 	#track: Moq.Track;
 	#latency: Signal<Time.Milli>;
@@ -94,6 +99,10 @@ export class Consumer {
 	#notify?: () => void;
 
 	#signals = new Effect();
+
+	// Mimic the TimeRanges interface from HTMLMediaElement.
+	bufferedRanges: Signal<TimeRange[]> = new Signal<TimeRange[]>([]);
+	bufferDepth: Signal<Time.Milli> = new Signal(Time.Milli.zero);
 
 	constructor(track: Moq.Track, props?: ConsumerProps) {
 		this.#track = track;
@@ -150,6 +159,7 @@ export class Consumer {
 
 			for (;;) {
 				const next = await group.consumer.readFrame();
+
 				if (!next) break;
 
 				const { data, timestamp } = decode(next, this.#container);
@@ -164,6 +174,10 @@ export class Consumer {
 
 				group.frames.push(frame);
 
+				console.log('this.#groups', this.#groups.length);
+				console.log('this.#active', this.#active);
+				console.log('this.#groups[0].frames.length', this.#groups[0].frames.length);
+
 				if (!group.latest || timestamp > group.latest) {
 					group.latest = timestamp;
 				}
@@ -175,6 +189,8 @@ export class Consumer {
 					// Check for latency violations if this is a newer group.
 					this.#checkLatency();
 				}
+
+				this.updateBufferDepth();
 			}
 		} catch (_err) {
 			// Ignore errors, we close groups on purpose to skip them.
@@ -201,11 +217,15 @@ export class Consumer {
 		let min: number | undefined;
 		let max: number | undefined;
 
+		console.log("checkLatency this.#groups", this.#groups.length);
+
 		for (const group of this.#groups) {
 			if (!group.latest) continue;
 
 			// Use the earliest unconsumed frame in the group.
-			const frame = group.frames.at(0)?.timestamp ?? group.latest;
+			const frame = group.frames.at(0)?.timestamp;
+			if (frame === undefined) continue;
+
 			if (min === undefined || frame < min) {
 				min = frame;
 			}
@@ -218,7 +238,17 @@ export class Consumer {
 		if (min === undefined || max === undefined) return;
 
 		const latency = max - min;
-		if (latency < Time.Micro.fromMilli(this.#latency.peek())) return;
+		const limit = Time.Micro.fromMilli(this.#latency.peek());
+
+		if (latency < limit) return;
+
+		console.warn("latency violation", {
+			latency,
+			limit,
+			active: this.#active,
+			first: first.consumer.sequence,
+			drop: this.#active !== undefined && first.consumer.sequence <= this.#active,
+		});
 
 		if (this.#active !== undefined && first.consumer.sequence <= this.#active) {
 			this.#groups.shift();
@@ -240,17 +270,22 @@ export class Consumer {
 
 	async decode(): Promise<Frame | undefined> {
 		for (;;) {
+			this.updateBufferDepth();
+
 			if (
 				this.#groups.length > 0 &&
 				this.#active !== undefined &&
 				this.#groups[0].consumer.sequence <= this.#active
 			) {
 				const frame = this.#groups[0].frames.shift();
-				if (frame) return frame;
+				if (frame) {
+					return frame;
+				}
 
 				// Check if the group is done and then remove it.
 				if (this.#active > this.#groups[0].consumer.sequence) {
 					this.#groups.shift();
+					this.updateBufferDepth();
 					continue;
 				}
 			}
@@ -280,5 +315,42 @@ export class Consumer {
 		}
 
 		this.#groups.length = 0;
+	}
+
+	updateBufferDepth() {
+		let min: number | undefined;
+		let max: number | undefined;
+
+		// console.log('this.#groups', this.#groups.length);
+		// console.log('this.#groups[0]', JSON.stringify(this.#groups[0], null, 2));
+
+		for (const group of this.#groups) {
+			if (!group.latest) continue;
+
+			// Use the earliest unconsumed frame in the group.
+			const frame = group.frames.at(0)?.timestamp;
+			if (frame === undefined) continue;
+
+
+			if (min === undefined || frame < min) {
+				min = frame;
+			}
+
+			if (max === undefined || group.latest > max) {
+				max = group.latest;
+			}
+		}
+
+		if (min === undefined || max === undefined) {
+			this.bufferDepth.set(Time.Milli.zero);
+			return;
+		}
+
+		const depth = Time.Micro.toMilli((max - min) as Time.Micro);
+
+		if (depth > 0) {
+			debugger;
+		}
+		this.bufferDepth.set(depth);
 	}
 }

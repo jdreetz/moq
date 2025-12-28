@@ -34,6 +34,12 @@ type WatchUIContextValues = {
 	setActiveRendition: (name: string | undefined) => void;
 	isStatsPanelVisible: () => boolean;
 	setIsStatsPanelVisible: (visible: boolean) => void;
+	isLatencyControlsOpen: () => boolean;
+	setIsLatencyControlsOpen: (open: boolean) => void;
+	toggleLatencyControls: () => void;
+	// videoBufferAmount: () => number;
+	videoBufferDepth: () => number;
+	// audioBufferAmount: () => number;
 };
 
 export const WatchUIContext = createContext<WatchUIContextValues>();
@@ -48,6 +54,9 @@ export default function WatchUIContextProvider(props: WatchUIContextProviderProp
 	const [availableRenditions, setAvailableRenditions] = createSignal<Rendition[]>([]);
 	const [activeRendition, setActiveRendition] = createSignal<string | undefined>(undefined);
 	const [isStatsPanelVisible, setIsStatsPanelVisible] = createSignal<boolean>(false);
+	const [isLatencyControlsOpen, setIsLatencyControlsOpen] = createSignal<boolean>(false);
+	const [videoBufferDepth, setVideoBufferDepth] = createSignal<number>(0);
+	// const [audioBufferAmount, setAudioBufferAmount] = createSignal<number>(0);
 
 	const togglePlayback = () => {
 		props.hangWatch.paused.set(!props.hangWatch.paused.get());
@@ -72,6 +81,26 @@ export default function WatchUIContextProvider(props: WatchUIContextProviderProp
 		}));
 	};
 
+	const toggleLatencyControls = () => {
+		setIsLatencyControlsOpen(!isLatencyControlsOpen());
+	};
+
+	createEffect(function hideLatencyControlsWhenStatsAreVisible() {
+		const areStatsVisible = isStatsPanelVisible();
+
+		if (areStatsVisible) {
+			setIsLatencyControlsOpen(false);
+		}
+	});
+
+	createEffect(function hideStatsPanelWhenLatencyControlsAreOpen() {
+		const areLatencyControlsOpen = isLatencyControlsOpen();
+
+		if (areLatencyControlsOpen) {
+			setIsStatsPanelVisible(false);
+		}
+	});
+
 	const value: WatchUIContextValues = {
 		hangWatch: props.hangWatch,
 		watchStatus,
@@ -89,6 +118,11 @@ export default function WatchUIContextProvider(props: WatchUIContextProviderProp
 		setActiveRendition: setActiveRenditionValue,
 		isStatsPanelVisible,
 		setIsStatsPanelVisible,
+		isLatencyControlsOpen,
+		setIsLatencyControlsOpen,
+		toggleLatencyControls,
+		videoBufferDepth,
+		// audioBufferAmount,
 	};
 
 	createEffect(() => {
@@ -161,6 +195,16 @@ export default function WatchUIContextProvider(props: WatchUIContextProviderProp
 		watch.signals.effect((effect) => {
 			const selected = effect.get(watch.video.source.active);
 			setActiveRendition(selected);
+		});
+
+		watch.signals.effect((effect) => {
+			const depth = effect.get(watch.video.source.bufferDepth);
+			setVideoBufferDepth(depth);
+		});
+
+		watch.signals.effect((effect) => {
+			const bufferedRanges = effect.get(watch.video.source.bufferedRanges);
+			console.log("bufferedRanges", bufferedRanges);
 		});
 	});
 

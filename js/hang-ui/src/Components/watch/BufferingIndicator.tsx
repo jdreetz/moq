@@ -6,7 +6,7 @@ export default function BufferingIndicator() {
 
 	return (
 		<Show when={context.buffering()}>
-			<div class="bufferingContainer">
+			<div class="playerOverlay bufferingContainer">
 				<div class="bufferingSpinner" />
 			</div>
 		</Show>
